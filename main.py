@@ -57,12 +57,15 @@ def main():
     login_parser.add_argument("email", help="Email address")
     login_parser.add_argument("password", help="Password")
     
+    # Logout commands
+    logout_parser = subparsers.add_parser("logout", help="Logout from SkillSync")
+    
     # Book Meeting commands
     
     book_meeting_parser = subparsers.add_parser("book_meeting", help="Book a meeting")
-    book_meeting_parser.add_argument("mentor_id", help="ID of the mentor")
-    book_meeting_parser.add_argument("date", help="Date of the meeting (YYYY-MM-DD)")
-    book_meeting_parser.add_argument("time", help="Time of the meeting (HH:MM)")
+    book_meeting_parser.add_argument("mentor_id", help="ID of the mentor (use list_mentors to find IDs)")
+    book_meeting_parser.add_argument("date", help="Date of the meeting (YYYY-MM-DD format)")
+    book_meeting_parser.add_argument("time", help="Time of the meeting (HH:MM format, 24-hour clock)")
     
     args = parser.parse_args()
 
