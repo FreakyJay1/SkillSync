@@ -67,26 +67,34 @@ def get_mentors():
         mentors.append(User.from_dict(doc.id, doc.to_dict()))
     return mentors
 
-def book_meeting_in_db(mentor_id, peer_id, start_time, end_time):
+def get_peers():
+    """Retrieves all users with the role 'peer' from Firestore."""
+    peers = []
+    docs = db.collection("users").where("role", "==", "peer").stream()
+    for doc in docs:
+        peers.append(User.from_dict(doc.id, doc.to_dict()))
+    return peers
+
+def book_meeting_in_db(booked_by_id, booked_with_id, start_time, end_time, booked_by_role):
     
     """
-        Books a meeting in the database with the given details.
+        Books a meeting in the database.
+
         Args:
-            mentor_id (str): The ID of the mentor.
-            peer_id (str): The ID of the peer.
-            start_time (datetime): The start time of the meeting.
-            end_time (datetime): The end time of the meeting.
-        Returns:
-            str: The ID of the newly created meeting document in the database.
+            booked_by_id: The ID of the user who initiated the booking.
+            booked_with_id: The ID of the user they are booking with.
+            start_time: The start time of the meeting.
+            end_time: The end time of the meeting.
+            booked_by_role: The role of the user who initiated the booking ('mentor' or 'peer').
     """
     
     meeting_data = {
-        "mentor_id": mentor_id,
-        "peer_id": peer_id,
+        "mentor_id": booked_by_id if booked_by_role == "mentor" else booked_with_id,
+        "peer_id": booked_by_id if booked_by_role == "peer" else booked_with_id,
         "start_time": start_time,
         "end_time": end_time,
-        "status": "pending"
+        "status": "pending", 
+        "booked_by": booked_by_role  
     }
-    
     meeting_ref = db.collection("meetings").add(meeting_data)
     return meeting_ref[1].id

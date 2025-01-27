@@ -1,5 +1,5 @@
 from auth import register_user, login_user, get_current_user_id, logout_user
-from database import add_user_to_db, get_mentors, book_meeting_in_db, get_user_by_id
+from database import add_user_to_db, get_mentors, book_meeting_in_db, get_user_by_id,get_peers
 from calendar_api import create_calendar_event
 from models import Meeting
 from utils import parse_datetime_string, is_valid_email, is_strong_password
@@ -60,58 +60,113 @@ def handle_command(args):
         logout_user()
     
     elif args.command == "book_meeting":
+        # Role-Based Logic: Check if the user is logged in
         current_user_id = get_current_user_id()
 
         if not current_user_id:
             print("Please log in to book a meeting.")
             return
 
-        current_user = get_user_by_id(current_user_id)
-        
-        if not current_user or current_user.role != "peer":
-            print("Only peers can book meetings.")
-            return
-        
-        mentors = get_mentors()
-        
-        if not mentors:
-            print("No mentors available.")
-            return
-        
-        print("Available Mentors:")
-        for i, mentor in enumerate(mentors):
-            print(f"{i + 1}. {mentor.name} (Expertise: {mentor.expertise}, Availability: {mentor.availability})")
-        
-        while True:
+        current_user = get_user_by_id(current_user_id)  # Fetch user from Firestore
+
+        # Check if the current user is a mentor or a peer
+        if current_user.role == "peer":
+            # Existing logic for peers booking meetings with mentors
+            mentors = get_mentors()
+            if not mentors:
+                print("No mentors available.")
+                return
+
+            print("Available Mentors:")
+            for i, mentor in enumerate(mentors):
+                print(
+                    f"{i + 1}. {mentor.name} (Expertise: {mentor.expertise}, Availability: {mentor.availability})"
+                )
+
+            # Get Mentor Selection
+            while True:
+                try:
+                    mentor_index = int(input("Select a mentor by number: ")) - 1
+                    selected_mentor = mentors[mentor_index]
+                    break
+                except (ValueError, IndexError):
+                    print("Invalid mentor selection. Please enter a valid number.")
+
+            # Parse Date and Time 
+            # Use args.date and args.time directly
             try:
-                mentor_index = int(input("Select a mentor by number: ")) - 1
-                selected_mentor = mentors[mentor_index]
-                break
-            
-            except (ValueError, IndexError):
-                print("Invalid mentor selection. Please enter a valid number.")
-        
-        while True:
-            try:
-                date_str = input("Enter the date for the meeting (YYYY-MM-DD): ")
-                time_str = input("Enter the time for the meeting (HH:MM): ")
-                start_time = parse_datetime_string(date_str, time_str)
+                start_time = parse_datetime_string(args.date, args.time)
                 end_time = start_time.replace(hour=start_time.hour + 1)
-                break
-            
             except ValueError as e:
                 print(e)
-        
-        meeting_id = book_meeting_in_db(selected_mentor.user_id, current_user_id, start_time, end_time)
-        
-        meeting = Meeting(meeting_id, selected_mentor.user_id, current_user_id, start_time, end_time)
-        
-        try:
-            create_calendar_event(meeting)
-        
-        except ValueError as e:
-            print(e)
-            print("Error creating calendar event. The meeting has been booked in the database but not on the calendar.")
-    
+                return
+
+            # Book Meeting in Database
+            meeting_id = book_meeting_in_db(
+                selected_mentor.user_id, current_user_id, start_time, end_time
+            )
+
+            # Create Google Calendar Event
+            meeting = Meeting(
+                meeting_id, selected_mentor.user_id, current_user_id, start_time, end_time
+            )
+            try:
+                create_calendar_event(meeting)
+            except ValueError as e:
+                print(e)
+                print(
+                    "Error creating calendar event. The meeting has been booked in the database but not on the calendar."
+                )
+
+        elif current_user.role == "mentor":
+            # New logic for mentors booking meetings with peers
+            peers = get_peers()
+            if not peers:
+                print("No peers available.")
+                return
+
+            print("Available Peers:")
+            for i, peer in enumerate(peers):
+                print(f"{i + 1}. {peer.name} (Email: {peer.email})")
+
+            # Get Peer Selection
+            while True:
+                try:
+                    peer_index = int(input("Select a peer by number: ")) - 1
+                    selected_peer = peers[peer_index]
+                    break
+                except (ValueError, IndexError):
+                    print("Invalid peer selection. Please enter a valid number.")
+
+            # Parse Date and Time (same as for peers booking with mentors)
+            # Use args.date and args.time directly
+            try:
+                start_time = parse_datetime_string(args.date, args.time)
+                end_time = start_time.replace(hour=start_time.hour + 1)
+            except ValueError as e:
+                print(e)
+                return
+
+            # Book Meeting in Database (switch mentor_id and peer_id)
+            meeting_id = book_meeting_in_db(
+                current_user_id, selected_peer.user_id, start_time, end_time
+            )
+
+            # Create Google Calendar Event
+            meeting = Meeting(
+                meeting_id, current_user_id, selected_peer.user_id, start_time, end_time
+            )
+            try:
+                create_calendar_event(meeting)
+            except ValueError as e:
+                print(e)
+                print(
+                    "Error creating calendar event. The meeting has been booked in the database but not on the calendar."
+                )
+
+        else:
+            print("Invalid user role.")
+            return
+
     else:
-        print("Invalid command. Please try again.")
+        print("Invalid command")

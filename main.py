@@ -23,7 +23,7 @@ def main():
             python main.py login <email> <password>
 
             To book a meeting:
-            python main.py book_meeting <mentor_id> <date> <time>
+            python main.py book_meeting <date> <time>
 
             For help on a specific command:
             python main.py <command> -h
@@ -63,7 +63,6 @@ def main():
     # Book Meeting commands
     
     book_meeting_parser = subparsers.add_parser("book_meeting", help="Book a meeting")
-    book_meeting_parser.add_argument("mentor_id", help="ID of the mentor (use list_mentors to find IDs)")
     book_meeting_parser.add_argument("date", help="Date of the meeting (YYYY-MM-DD format)")
     book_meeting_parser.add_argument("time", help="Time of the meeting (HH:MM format, 24-hour clock)")
     
