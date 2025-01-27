@@ -3,7 +3,7 @@ from firebase_admin import credentials, auth
 import json
 import os
 
-cred = credentials.Certificate("firebase-admin.json")
+cred = credentials.Certificate("firebase_admin.json")
 firebase_admin.initialize_app(cred)
 
 def register_user(email, password, name, role):
