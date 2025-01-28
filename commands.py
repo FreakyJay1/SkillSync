@@ -103,7 +103,7 @@ def handle_command(args):
 
             # Book Meeting in Database
             meeting_id = book_meeting_in_db(
-                selected_mentor.user_id, current_user_id, start_time, end_time
+                selected_mentor.user_id, current_user_id, start_time, end_time, booked_by_role="peer"
             )
 
             # Create Google Calendar Event
@@ -149,7 +149,7 @@ def handle_command(args):
 
             # Book Meeting in Database (switch mentor_id and peer_id)
             meeting_id = book_meeting_in_db(
-                current_user_id, selected_peer.user_id, start_time, end_time
+                current_user_id, selected_peer.user_id, start_time, end_time, booked_by_role="mentor"
             )
 
             # Create Google Calendar Event
@@ -167,6 +167,5 @@ def handle_command(args):
         else:
             print("Invalid user role.")
             return
-
     else:
         print("Invalid command")

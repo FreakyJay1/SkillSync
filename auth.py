@@ -2,9 +2,28 @@ import firebase_admin
 from firebase_admin import credentials, auth
 import json
 import os
+from dotenv import load_dotenv
+import pyrebase
+
+load_dotenv() 
+
+config = {
+    "apiKey": os.environ.get("API_KEY"),
+    "authDomain": os.environ.get("AUTH_DOMAIN"),
+    "databaseURL": os.environ.get("DATABASE_URL"),
+    "projectId": os.environ.get("PROJECT_ID"),
+    "storageBucket": os.environ.get("STORAGE_BUCKET"),
+    "messagingSenderId": os.environ.get("MESSAGING_SENDER_ID"),
+    "appId": os.environ.get("APP_ID"),
+    "measurementId": os.environ.get("MEASUREMENT_ID")
+}
+# Initialize Pyrebase
+firebase = pyrebase.initialize_app(config)
+pyrebase_auth = firebase.auth()
 
 cred = credentials.Certificate("firebase_admin.json")
-firebase_admin.initialize_app(cred)
+firebase = firebase_admin.initialize_app(cred)
+
 
 def register_user(email, password, name, role):
     
@@ -58,17 +77,22 @@ def login_user(email, password):
             permissions set to 600.
     """
     
-    user = auth.sign_in_with_email_and_password(email, password)
-    id_token = user['idToken']
-    
-    token_file = os.path.expanduser("~/.skillsync_token.json")
-    with open(token_file, "w") as f:
-        json.dump({"token": id_token}, f)
-    
-    os.chmod(token_file, 0o600)
+    try:
+        user = pyrebase_auth.sign_in_with_email_and_password(email, password)
+        id_token = user['idToken']
 
-    print("Login successful.")
-    return id_token
+        token_file = os.path.expanduser("~/.skillsync_token.json")
+        with open(token_file, "w") as f:
+            json.dump({"token": id_token}, f)
+
+        os.chmod(token_file, 0o600)
+
+        print("Login successful.")
+        return id_token
+    
+    except Exception as e:
+        print(f"Login failed: {e}")
+        return None
 
 def get_current_user_id():
     

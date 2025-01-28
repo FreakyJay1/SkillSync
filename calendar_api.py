@@ -18,15 +18,17 @@ def create_calendar_event(meeting: Meeting):
     if not is_valid_time_range(meeting.start_time, meeting.end_time):
         raise ValueError("Meeting time must be between 07:00 and 17:00.")
     
+    user_timezone = "Africa/Johannesburg"
+    
     event = {
         'summary': f'Meeting with {meeting.peer_id}',
         'start': {
             'dateTime': meeting.start_time.isoformat(),
-            'timeZone': 'YOUR_TIMEZONE',
+            'timeZone': user_timezone,
         },
         'end': {
             'dateTime': meeting.end_time.isoformat(),
-            'timeZone': 'YOUR_TIMEZONE',
+            'timeZone': user_timezone,
         },
         'attendees': [],
     }
